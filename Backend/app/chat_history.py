@@ -15,11 +15,8 @@ router = APIRouter()
 # Pydantic Models
 # -------------------------
 class ConversationModel(BaseModel):
-    user_id: str
     title: str
     question: str
-    isDeleted: bool = False
-    created_at: datetime = datetime.utcnow()
 
 
 class MessageModel(BaseModel):
@@ -33,12 +30,22 @@ class MessageModel(BaseModel):
 # Create Conversation + initial message
 # -------------------------
 @router.post("/conversation")
-async def create_conversation(conversation: ConversationModel, request: Request):
+async def create_conversation(conversation: ConversationModel, request: Request,token: HTTPAuthorizationCredentials = Depends(security)):
     try:
         request_id = request.state.request_id
-
+        payload = decode_access_token(token.credentials)
+        user_id = payload.get("id")
+        if not user_id:
+            return ResponseManager.error(
+                message="Invalid token",
+                code=401,
+                request_id=request_id
+            )
         # Save conversation
         conv_data = conversation.dict()
+        conv_data["user_id"]=user_id
+        conv_data["isDeleted"]=False
+        conv_data["created_at"] = datetime.utcnow()
         result = await conversations_collection.insert_one(conv_data)
         conv_id = str(result.inserted_id)
 
