@@ -84,7 +84,7 @@ async def login(user: UserLogin, request: Request):
                 request_id=request_id
             )
 
-        token = create_access_token({"id": str(db_user["_id"]), "email": db_user["email"]})
+        token = create_access_token({"id": str(db_user["_id"]),"name":db_user["name"], "email": db_user["email"]})
         await users_collection.update_one(
             {"_id": ObjectId(db_user["_id"])},
             {"$set": {"isLogin": True, "lastLoginDate": datetime.utcnow()}}

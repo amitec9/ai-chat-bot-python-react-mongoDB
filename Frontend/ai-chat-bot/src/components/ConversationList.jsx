@@ -2,18 +2,35 @@ import React from "react";
 
 const ConversationList = ({ conversations, selectConversation, handleDelete, selectedId }) => {
   return (
-    <div>
-      <h3>Chat History</h3>
-      {conversations.map((conv) => (
-        <div
-          key={conv._id}
-          style={{ margin: "0.5rem 0", padding: "0.5rem", border: selectedId === conv._id ? "2px solid blue" : "1px solid gray" }}
-        >
-          <strong>{conv.title}</strong>
-          <button onClick={() => handleDelete(conv._id)} style={{ marginLeft: "1rem" }}>Delete</button>
-          <button onClick={() => selectConversation(conv._id)} style={{ marginLeft: "0.5rem" }}>Open</button>
+    <div className="sidebar-content">
+      {conversations.length === 0 ? (
+        <div style={{ padding: "1rem", textAlign: "center", color: "var(--text-muted)" }}>
+          No conversations yet
         </div>
-      ))}
+      ) : (
+        conversations.map((conv) => (
+          <div
+            key={conv._id}
+            className={`conversation-item ${selectedId === conv._id ? "active" : ""}`}
+            onClick={() => selectConversation(conv._id)}
+          >
+            <div className="conversation-header">
+              <div className="conversation-title">{conv.title}</div>
+              <div className="conversation-actions">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(conv._id);
+                  }}
+                  className="btn-danger"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 };
