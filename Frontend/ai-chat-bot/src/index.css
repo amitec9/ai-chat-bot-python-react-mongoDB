@@ -7,6 +7,8 @@
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
   --info-color: #3b82f6;
+  /* Layout */
+  --navbar-height: 72px;
   
   /* Neutral Colors */
   --dark-bg: #0f172a;

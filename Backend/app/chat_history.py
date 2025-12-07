@@ -6,10 +6,21 @@ from .database import conversations_collection, messages_collection
 
 from .response_manager import ResponseManager
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
 from .auth import decode_access_token  # your JWT decode function
+from dotenv import load_dotenv
+from google import genai
+
+# Load environment variables
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print("GEMINI_API_KEY:", GEMINI_API_KEY)
+
+# Initialize Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
 security = HTTPBearer()  # For Authorization header
 router = APIRouter()
-
+from typing import List, Dict
 
 # -------------------------
 # Pydantic Models
@@ -63,6 +74,7 @@ async def create_conversation(conversation: ConversationModel, request: Request,
 # -------------------------
 # Add message to conversation
 # -------------------------
+History: List[Dict] = []
 @router.post("/message")
 async def add_message(message: MessageModel, request: Request):
     try:
@@ -76,12 +88,59 @@ async def add_message(message: MessageModel, request: Request):
                 code=404,
                 request_id=request_id
             )
+          # Add user message to history
+        History.append({"role": "user", "parts": [{"text": message.message}]})
 
+        # Call Gemini API
+        response = client.models.generate_content(
+        model="gemini-2.5-flash-lite",
+        contents=History,
+        config={
+            "system_instruction": """
+        You are a JavaScript  Instructor. You will only reply to the problem related to 
+        JavaScript . You have to solve query of user in simplest way
+        If user ask any question which is not related to JavaScript , reply him rudely
+        Example: If user ask, How are you
+            You will reply: You dumb ask me some sensible question, like this message you can reply anything more rudely
+            
+            You have to reply him rudely if question is not related to JavaScript.
+            Else reply him politely with simple explanation.
+            """
+        }
+    )
+
+    
+
+        # Add AI response to history
+        ai_reply = response.text
+        History.append({"role": "model", "parts": [{"text": response.text}]})
+
+        
         # Save message
-        msg_data = message.dict()
-        msg_data["isDeleted"]=False
-        msg_data["created_at"] = datetime.utcnow()
-        result = await messages_collection.insert_one(msg_data)
+          # ---------------------------
+        # Save USER message in MongoDB
+        # ---------------------------
+        user_msg = {
+            "conversation_id": message.conversation_id,
+            "sender": "user",
+            "message": message.message,
+            "isDeleted": False,
+            "created_at": datetime.utcnow()
+        }
+        await messages_collection.insert_one(user_msg)
+
+        # ---------------------------
+        # Save ASSISTANT message
+        # ---------------------------
+        assistant_msg = {
+            "conversation_id": message.conversation_id,
+            "sender": "assistant",
+            "message": ai_reply,
+            "isDeleted": False,
+            "created_at": datetime.utcnow()
+        }
+        result = await messages_collection.insert_one(assistant_msg)
+
 
         return ResponseManager.success(
             message="Message added successfully",
@@ -90,6 +149,7 @@ async def add_message(message: MessageModel, request: Request):
         )
 
     except Exception as e:
+        print(e)
         return ResponseManager.handle_exception(e, request_id=request.state.request_id)
 
 
