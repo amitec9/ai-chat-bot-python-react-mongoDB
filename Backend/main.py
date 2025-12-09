@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.user import router as user_router
 from app.chat_history import router as chat_history
+from app.rag import router as reg_router
 from fastapi import FastAPI,Request
 from starlette.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,6 +47,7 @@ async def add_request_id(request: Request, call_next):
 
 app.include_router(user_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(chat_history, prefix="/api/v1/chats", tags=["Save chat history API"])
+app.include_router( reg_router, prefix="/api/v1/regs", tags=["Reg doument upload API"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to AI chat bot API with MongoDB!"}

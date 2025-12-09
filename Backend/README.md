@@ -145,7 +145,7 @@ AWS server ka selection aapke **traffic**, **concurrent users**, aur **workload*
 Agar batao ki **daily kitna traffic expect kar rahe ho**, toh mai **best AWS plan** suggest kar sakta hoon! 🚀
 
 pip freeze > requirementsamit.txt
-
+pip freeze > requirements.txt
 pip install google-auth google-auth-oauthlib google-auth-httplib2
 
 
